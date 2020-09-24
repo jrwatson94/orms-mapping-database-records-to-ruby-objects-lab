@@ -71,9 +71,23 @@ class Student
   end
 
   def self.first_student_in_grade_10
-    self.first_X_students_in_grade_10(1)
-    
+    sql = <<-SQL
+      SELECT * 
+      FROM students
+      WHERE grade = 10 
+      LIMIT 1
+    SQL
+    row = DB[:conn].execute(sql).flatten
+    self.new_from_db(row)
   end
+
+  def self.all_students_in_grade_X(grade)
+    sql = "SELECT * FROM students WHERE grade = ?"
+    DB[:conn].execute(sql,grade).map do |row|
+      self.new_from_db(row)
+    end
+  end
+
   
   def save
     sql = <<-SQL
@@ -82,6 +96,7 @@ class Student
     SQL
 
     DB[:conn].execute(sql, self.name, self.grade)
+    @id = DB[:conn].execute("SELECT last_insert_rowid() FROM students")[0][0]
   end
   
   def self.create_table
